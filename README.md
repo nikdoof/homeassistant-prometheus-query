@@ -14,6 +14,7 @@ sensor:
     prometheus_query: temperature{location="Pisa",province="PI",region="Tuscany"}
     unit_of_measurement: "°C"
     state_class: total_increasing
+    device_class: measurement
 ```
 
 ### Configuration Variables
