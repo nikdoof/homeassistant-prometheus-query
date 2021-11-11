@@ -13,8 +13,8 @@ sensor:
     prometheus_url: http://localhost:9090
     prometheus_query: temperature{location="Pisa",province="PI",region="Tuscany"}
     unit_of_measurement: "°C"
-    state_class: total_increasing
-    device_class: measurement
+    state_class: measurement
+    device_class: temperature
 ```
 
 ### Configuration Variables
@@ -39,5 +39,9 @@ sensor:
 
   (string)(Optional) Defines the type of sensor. `measurement` for metrics that are gauges,
                      `total_increasing` for metrics that are counters.
+
+- device_class
+
+  (string)(Optional) Defines the sensor icon for dashboard. `temperature | power | battery` for metrics that are gauges
 
 It's a custom component so it must be downloaded under /custom_components folder.
