@@ -1,13 +1,10 @@
-import logging, time
+import logging
 import requests
-import json
 import voluptuous as vol
 import homeassistant.helpers.config_validation as cv
 from datetime import timedelta
 from homeassistant.helpers.config_validation import PLATFORM_SCHEMA
-from homeassistant.helpers.entity import Entity
 from homeassistant.components.sensor import SensorEntity
-from homeassistant.util import Throttle
 from homeassistant.const import (
     CONF_NAME,
     CONF_UNIT_OF_MEASUREMENT,
@@ -18,8 +15,6 @@ from homeassistant.components.sensor import (
     DEVICE_CLASSES_SCHEMA,
     STATE_CLASSES_SCHEMA,
 )
-
-from prometheus_client import Summary
 
 CONF_PROMETHEUS_URL = 'prometheus_url'
 CONF_PROMETHEUS_QUERY = 'prometheus_query'
