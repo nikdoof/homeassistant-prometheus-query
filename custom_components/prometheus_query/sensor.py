@@ -70,13 +70,22 @@ class PrometheusQuery(SensorEntity):
         """Fetch new state data for the sensor.
         This is the only method that should fetch new data for Home Assistant.
         """
+        response_value = STATE_UNKNOWN
         try:
             response = requests.get(self._url, params={'query': self._query})
-            if (response):
-                results = response.json()['data']['result']
-                self._attr_native_value = results[0]['value'][1]
-            else:
-                self._attr_native_value = STATE_UNKNOWN
-            self._attr_state = self._attr_native_value
-        except URLCallError:
-          _LOGGER.error("Error when retrieving update data")
+        except requests.RequestException:
+          _LOGGER.exception("Error when querying Prometheus")
+        else:
+            if response.ok:
+                try:
+                    json = response.json()
+                except requests.exceptions.JSONDecodeError:
+                    _LOGGER.exception("Unable to decode response from Prometheus")
+                else:
+                    if 'data' in json and 'result' in json['data']:
+                        if len(json['data']['result']):
+                            self._attr_native_value = json['data']['result'][0]['value'][1]
+
+        # Update attributes
+        self._attr_native_value = response_value
+        self._attr_state = self._attr_native_value
