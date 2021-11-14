@@ -9,18 +9,17 @@ from homeassistant.const import (
     CONF_NAME,
     CONF_UNIT_OF_MEASUREMENT,
     CONF_DEVICE_CLASS,
+    CONF_UNIQUE_ID,
     STATE_UNKNOWN,
 )
 from homeassistant.components.sensor import (
+    CONF_STATE_CLASS,
     DEVICE_CLASSES_SCHEMA,
     STATE_CLASSES_SCHEMA,
 )
 
 CONF_PROMETHEUS_URL = 'prometheus_url'
 CONF_PROMETHEUS_QUERY = 'prometheus_query'
-CONF_STATE_CLASS = 'state_class'
-CONF_DEVICE_CLASS = 'device_class'
-CONF_UNIQUE_ID = 'unique_id'
 SCAN_INTERVAL = timedelta(seconds=600)
 
 _LOGGER = logging.getLogger(__name__)
@@ -35,6 +34,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
     vol.Optional(CONF_DEVICE_CLASS): DEVICE_CLASSES_SCHEMA,
     vol.Optional(CONF_UNIQUE_ID): cv.string,
 })
+
 
 def setup_platform(hass, config, add_entities, discovery_info=None):
     """Set up the sensor platform."""
@@ -53,6 +53,7 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
 
 class PrometheusQuery(SensorEntity):
     """Representation of a Sensor based on Prometheus"""
+
     def __init__(self, prom_data):
         """Initialize the sensor."""
         self._url = prom_data["url"]
@@ -74,7 +75,7 @@ class PrometheusQuery(SensorEntity):
         try:
             response = requests.get(self._url, params={'query': self._query})
         except requests.RequestException:
-          _LOGGER.exception("Error when querying Prometheus")
+            _LOGGER.exception("Error when querying Prometheus")
         else:
             if response.ok:
                 try:
