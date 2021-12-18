@@ -1,26 +1,20 @@
 import logging
+from datetime import timedelta
+
+import homeassistant.helpers.config_validation as cv
 import requests
 import voluptuous as vol
-import homeassistant.helpers.config_validation as cv
-from datetime import timedelta
+from homeassistant.components.sensor import (CONF_STATE_CLASS,
+                                             DEVICE_CLASSES_SCHEMA,
+                                             STATE_CLASSES_SCHEMA,
+                                             SensorEntity)
+from homeassistant.const import (CONF_DEVICE_CLASS, CONF_NAME, CONF_UNIQUE_ID,
+                                 CONF_UNIT_OF_MEASUREMENT, STATE_UNKNOWN)
 from homeassistant.helpers.config_validation import PLATFORM_SCHEMA
-from homeassistant.components.sensor import SensorEntity
-from homeassistant.const import (
-    CONF_NAME,
-    CONF_UNIT_OF_MEASUREMENT,
-    CONF_DEVICE_CLASS,
-    CONF_UNIQUE_ID,
-    STATE_UNKNOWN,
-)
-from homeassistant.components.sensor import (
-    CONF_STATE_CLASS,
-    DEVICE_CLASSES_SCHEMA,
-    STATE_CLASSES_SCHEMA,
-)
 
 CONF_PROMETHEUS_URL = 'prometheus_url'
 CONF_PROMETHEUS_QUERY = 'prometheus_query'
-SCAN_INTERVAL = timedelta(seconds=600)
+SCAN_INTERVAL = timedelta(seconds=60)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -71,22 +65,28 @@ class PrometheusQuery(SensorEntity):
         """Fetch new state data for the sensor.
         This is the only method that should fetch new data for Home Assistant.
         """
-        response_value = STATE_UNKNOWN
         try:
             response = requests.get(self._url, params={'query': self._query})
-        except requests.RequestException:
-            _LOGGER.exception("Error when querying Prometheus")
-        else:
-            if response.ok:
-                try:
-                    json = response.json()
-                except requests.exceptions.JSONDecodeError:
-                    _LOGGER.exception("Unable to decode response from Prometheus")
+            if response:
+                results = response.json()['data']['result']
+                if len(results):
+                    self._attr_native_value = results[0]['value'][1]
                 else:
-                    if 'data' in json and 'result' in json['data']:
-                        if len(json['data']['result']):
-                            self._attr_native_value = json['data']['result'][0]['value'][1]
+                    _LOGGER.warning('Empty result returned for query %s', self._query)
+                    self._attr_native_value = STATE_UNKNOWN
+            else:
+                self._attr_native_value = STATE_UNKNOWN
+        except requests.exceptions.JSONDecodeError:
+            _LOGGER.exception("Unable to decode response from Prometheus")
+            self._attr_native_value = STATE_UNKNOWN
+            pass
+        except requests.exceptions.ConnectionError:
+            _LOGGER.error("Unable to connect to the Prometheus server at %s", self._url)
+            self._attr_native_value = STATE_UNKNOWN
+            pass
+        except Exception:
+            _LOGGER.exception("Error when retrieving update data")
+            self._attr_native_value = STATE_UNKNOWN
+            pass
 
-        # Update attributes
-        self._attr_native_value = response_value
         self._attr_state = self._attr_native_value
